@@ -1,0 +1,59 @@
+#+TITLE: Computer Security lab 2018 ( Bufferoverflow lab)
+#+DATE: Sat Dec  8 11:19:50 +0545 2018
+#+OPTIONS: toc:nil, num:nil
+
+Buffer overflows exploits occur when a program s to write into a buffer beyond the buffers size and get arbitrary code to execute. This can lead to bypassing security protocols, executing parts of code that aren't meant to be executed (changing the flow of control), or gaining control of a machine.
+
+* Setup
+  To disable address randomization in kernel, for ease of bufferoverflow test
+  #+BEGIN_SRC shell
+  # to rollback set value to 2
+  sudo sysctl -w kernel.randomize_va_space=0
+  #+END_SRC
+  Also *gcc* compiler implements a security mechanism called ~stack guard~ to disable it you can use a flag ~-fno-stack-protector~ during compilation
+
+* Tools
+** objdump
+   This is a simple tool that will dump an object files information. This will parse the object file and give information on mapped memory for functions, symbols, header information, etc.
+
+* Tasks
+** 2.1 man objdump
+*** Answers
+    - ~-x or --all-headers~ (Display all available header information, including the symbol table and relocation entries.  Using -x is equivalent to specifying all of -a -f -h -p -r -t.)
+    - ~-t or --syms~ (Print the symbol table entries of the file.)
+    - ~-M intel or --disassembler-options=intel~ ( where M is the flag and ~intel~ is argument )
+*** Sample Example and answers
+     _Sample C program_
+      #+BEGIN_SRC c
+      int add_nums(int a, int b){
+      return a + b;
+      }
+       
+      int main(void){
+      add_nums(17, 25);
+      }
+     #+END_SRC
+**** Answers according to my machine
+     - bytecode for ret is ~c3~
+     - memory location of main function is ~000000000000112d~
+     - memory location of add_num func is ~0000000000001119~
+     - ~push~ and ~mov~ are the two assembly instruction
+
+** 2.2 GDB
+   GDB is a debugging tool that allows you to run the compiled file and step through the assembly. Before we look at the simple.c file with gdb, here is a table of common commands.
+*** Answers
+    - ~0x0000555555555140~ memory address after the call to add_nums
+    - 
+** 3.1 Simple Buffer Overflow
+*** Answer
+    - buffer_one=one, buffer_two=two, value=5 and after buffer_one=one, buffer_two=1234, value=5
+    - I used "12345678910"
+    - buffer_two=12345678910 value and buffer_one=910 (my ~buffer_two~ and ~buffer_one~ was 8 byte big)
+      [[./bof_run.png]]p
+    - I got this error after I kept long value: ~Program received signal SIGSEGV, Segmentation fault. 0x0000003432343332 in ?? ()~
+      [[./bof_error.png]]
+    - previously buffer_one"one", buffer_two="two", value=5, after buffer_one="ijklmnop", buffer_two="abcdefghijklmnop", value=""(empty)
+    [[./bof_one_two.png]]
+    - the following output was seen by running with fullalphabet ~./overflow 'abcdefghijklmnopqrstuvwxyz'~
+      [[./bof_full_alpha.png]]
+    - Significance about above command is that, whenever the input is given more than 8 bytes it overflows towards next buffer regardless of any change in memory addresses.
